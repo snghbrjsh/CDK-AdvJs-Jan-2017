@@ -308,4 +308,13 @@ describe("Aggregate", function(){
 		});
 		console.table([cheapestProduct]);
 	});
-})
+});
+
+function before(count, fn){
+   var result = null;
+   return function(){
+       if (--count >= 0)
+          result = fn.apply(this, arguments);
+       return result;
+   }
+}
