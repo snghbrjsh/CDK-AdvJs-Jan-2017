@@ -228,8 +228,9 @@ describe("GroupBy", function(){
 			var result = {};
 			for(var i=0; i < list.length; i++){
 				var key = keySelectorFn(list[i]);
-				if (typeof result[key] === 'undefined')
-					result[key] = [];
+				/*if (typeof result[key] === 'undefined')
+					result[key] = [];*/
+				result[key] = result[key] || [];
 				result[key].push(list[i]);
 			}
 			return result;
@@ -257,3 +258,54 @@ describe("GroupBy", function(){
 		});
 	});
 });
+
+describe("Transform", function(){
+	function transform(list, fn){
+		var result = [];
+		for(var i=0; i < list.length; i++)
+			result.push(fn(list[i]));
+		return result;
+	}
+	describe("Products with 10% discount", function(){
+		var discountedProducts = transform(products, function(product){
+			return {
+				id : product.id,
+				name : product.name,
+				cost : product.cost,
+				discountedCost : product.cost * 0.9,
+				units : product.units
+			};
+		});
+		console.table(discountedProducts);
+	})
+});
+
+describe("Aggregate", function(){
+	function aggregate(list, fn, seed){
+		var result = seed,
+			start = 0;
+
+		if (!seed){
+			result = list[0];
+			start = 1;
+		}
+		
+		for(var i=start; i < list.length; i++)
+			result = fn(result, list[i]);
+		return result;
+	}
+
+	describe("Total stock", function(){
+		var totalStock = aggregate(products, function(result, product){
+			return result + product.units;
+		}, 0);
+		console.log(totalStock);
+	});
+
+	describe('cheapest product', function(){
+		var cheapestProduct = aggregate(products, function(product1, product2){
+			return product1.cost < product2.cost ? product1 : product2;
+		});
+		console.table([cheapestProduct]);
+	});
+})
