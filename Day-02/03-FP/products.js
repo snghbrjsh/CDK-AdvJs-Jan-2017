@@ -3,13 +3,13 @@ var products = [
 	{id : 3, name : 'Rice', cost : 20, units : 70, category : "grocery"},
 	{id : 9, name : 'Dal', cost : 80, units : 40, category : "grocery"},
 	{id : 8, name : 'Pencil', cost : 50, units : 90, category : "stationary"},
-	{id : 2, name : 'Vegetables', cost : 90, units : 20, category : "grocery"},
+	{id : 2, name : 'Vegetables', cost : 90, units : 20, category : "vegetables"},
 ]
 
 /*
 sort
 filter
-any
+any -
 all
 aggregate
 transform
@@ -41,21 +41,27 @@ describe("Sorting", function(){
 		console.table(products);
 	});
 
-	function sort(list, comparer){
-		var comparerFn = null;
+	function comparerFactory(comparer){
+
 		if (typeof comparer === 'function'){
-			comparerFn = comparer;
+			return comparer;
 		}
-		else if (typeof comparer === 'string'){
-			comparerFn = function(item1, item2){
+		if (typeof comparer === 'string'){
+			return function(item1, item2){
 				if (item1[comparer] > item2[comparer]) return 1;
 				if (item1[comparer] < item2[comparer]) return -1;
 				return 0;
 			}
 		}
-		else{
-			return;
+		return function(){}
+	}
+	function inverse(comparerFn){
+		return function(){
+			return -1 * comparerFn.apply(this, arguments);
 		}
+	}
+	function sort(list, comparer){
+		var comparerFn = comparerFactory(comparer);
 		for(var i=0; i < list.length-1; i++)
 			for(var j=i+1; j < list.length; j++)
 				if (comparerFn(list[i], list[j]) > 0 ){
@@ -64,6 +70,8 @@ describe("Sorting", function(){
 					list[j] = temp;
 				}
 	}
+
+
 	describe("Any list by any attribute", function(){
 		/*function sort(list, attrName){
 			for(var i=0; i < list.length-1; i++)
@@ -95,8 +103,7 @@ describe("Sorting", function(){
 						list[j] = temp;
 					}
 		}*/
-		describe("Products by value [cost * units]", function(){
-			var productComparerByValue = function(p1, p2){
+		var productComparerByValue = function(p1, p2){
 				var p1Value = p1.cost * p1.units,
 					p2Value = p2.cost * p2.units;
 
@@ -104,8 +111,13 @@ describe("Sorting", function(){
 				if (p1Value > p2Value) return 1;
 				return 0
 			};
-
+		describe("Products by value [cost * units]", function(){
 			sort(products, productComparerByValue);
+			console.table(products);
+		});
+		describe("Products by value [cost * units] in descending", function(){
+			var descendingComparerByValue = inverse(productComparerByValue);
+			sort(products, descendingComparerByValue);
 			console.table(products);
 		})
 	})
@@ -173,4 +185,75 @@ describe('Filtering', function(){
 			console.table(affordableProducts);
 		});
 	})
+});
+
+describe('Any', function(){
+	function any(list, criteriaFn){
+		for(var i=0; i < list.length; i++)
+			if (criteriaFn(list[i]))
+				return true;
+		return false;
+	}
+	console.log('Are there any costly products ', any(products, function(p){ return p.cost > 50}));
+});
+
+describe('All', function(){
+	function all(list, criteriaFn){
+		for(var i=0; i < list.length; i++)
+			if (!criteriaFn(list[i]))
+				return false;
+		return true;
+	}
+	console.log('Are all the products costly ', all(products, function(p){ return p.cost > 50}));
+});
+
+describe("GroupBy", function(){
+	describe("Products by category", function(){
+		function groupProductsByCategory(){
+			var result = {};
+			for(var i=0; i < products.length; i++){
+				var category = products[i].category;
+				if (typeof result[category] === 'undefined')
+					result[category] = [];
+				result[category].push(products[i]);
+			}
+			return result;
+		}
+		var productsGroupedByCategory = groupProductsByCategory();
+		console.log(productsGroupedByCategory);
+	});
+
+	describe("Any list by any key", function(){
+		function groupBy(list, keySelectorFn){
+			var result = {};
+			for(var i=0; i < list.length; i++){
+				var key = keySelectorFn(list[i]);
+				if (typeof result[key] === 'undefined')
+					result[key] = [];
+				result[key].push(list[i]);
+			}
+			return result;
+		}
+		function printGroup(groupedItems){
+			for(var key in groupedItems)
+				describe('key - ' + key, function(){
+					console.table(groupedItems[key]);
+				});
+		}
+
+		describe("Products by category", function(){
+			var categoryKeySelector = function(product){
+				return product.category;
+			};
+			var productsGroupedByCategory = groupBy(products, categoryKeySelector);
+			printGroup(productsGroupedByCategory);
+		});
+		describe("Products by cost", function(){
+			var costKeySelector = function(product){
+				return product.cost > 50 ? "costly" : "affordable";
+			};
+			var productsGroupedByCost = groupBy(products, costKeySelector);
+			printGroup(productsGroupedByCost);
+		});
+	});
 });
