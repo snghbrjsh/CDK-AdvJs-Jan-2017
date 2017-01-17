@@ -111,9 +111,66 @@ describe("Sorting", function(){
 	})
 });
 
-/*describe('Filtering', function(){
+describe('Filtering', function(){
 	describe("All costly products", function(){
-		//filter(...)
-		console.table(products);
+		function filterCostlyProducts(){
+			var result = [];
+			for(var i=0; i < products.length; i++)
+				if (products[i].cost > 50)
+					result.push(products[i]);
+			return result;
+		}
+		var costlyProducts = filterCostlyProducts();
+		console.table(costlyProducts);
 	});
-});*/
+	describe("Any list by any criteria", function(){
+		function filter(list, criteriaFn){
+			var result = [];
+			for(var i=0; i < list.length; i++)
+				if (criteriaFn(list[i]))
+					result.push(list[i]);
+			return result;
+		}
+		function negate(criteriaFn){
+			return function(){
+				return !criteriaFn.apply(this, arguments);
+			};
+		}
+		var stationaryProductCriteria = function(product){
+			return product.category === 'stationary';
+		};
+		describe("Stationary products", function(){
+			
+			var stationaryProducts = filter(products, stationaryProductCriteria);
+			console.table(stationaryProducts);
+		});
+		describe("Non stationary products", function(){
+			/*var nonStationaryProductCritera = function(product){
+				return !stationaryProductCriteria(product);
+			};*/
+			var nonStationaryProductCritera = negate(stationaryProductCriteria);
+
+			var nonStationaryProducts = filter(products, nonStationaryProductCritera);
+			console.table(nonStationaryProducts);
+		})
+
+		var costlyProductCriteria = function(product){
+			return product.cost > 50;
+		};
+		describe("Costly products [cost > 50]", function(){
+			
+			var costlyProducts = filter(products, costlyProductCriteria);
+			console.table(costlyProducts);
+		});
+
+		describe("Affordable products [cost <= 50]", function(){
+			/*var affordableProductCriteria = function(product){
+				return !costlyProductCriteria(product);
+			};*/
+			var affordableProductCriteria = negate(costlyProductCriteria);
+
+			var affordableProducts = filter(products,affordableProductCriteria);
+			console.table(affordableProducts);
+		});
+	})
+});
