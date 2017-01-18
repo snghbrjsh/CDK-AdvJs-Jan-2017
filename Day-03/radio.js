@@ -12,23 +12,21 @@ var radio = (function(){
 		this._subscribers = [];
 	}
 
+	function getSubscription(argument){
+		if (typeof argument === 'function'){
+			return argument;
+		}
+		if (argument instanceof Array){
+			var subscriptionFn = argument[0];
+			subscriptionFn.__context__ = argument[1];
+			return subscriptionFn;
+		}
+	}
 	Channel.prototype.subscribe = function(){
-		var subscriptionFn = arguments;
 		var self = this;
 		Array.prototype.forEach.call(arguments, function(argument){
-			if (typeof argument === 'function'){
-				self._subscribers.push(subscriptionFn);
-				return self;
-			}
-			if (argument instanceof Array){
-				var subscriptionFn = argument[0];
-				subscriptionFn.__context__ = argument[1];
-				self._subscribers.push(subscriptionFn);
-				return self;
-			}
-			return self;
-		})
-		
+			self._subscribers.push(getSubscription(argument));
+		});
 		return this;
 	}
 
