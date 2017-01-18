@@ -1,0 +1,52 @@
+var radio = (function(){
+	var channels = {};
+
+	function radio(topic){
+		if (!channels.hasOwnProperty(topic))
+			channels[topic] = new Channel(topic);
+		return channels[topic];
+	}
+
+	function Channel(name){
+		this.name = name;
+		this._subscribers = [];
+	}
+
+	Channel.prototype.subscribe = function(){
+		var subscriptionFn = arguments;
+		var self = this;
+		Array.prototype.forEach.call(arguments, function(argument){
+			if (typeof argument === 'function'){
+				self._subscribers.push(subscriptionFn);
+				return self;
+			}
+			if (argument instanceof Array){
+				var subscriptionFn = argument[0];
+				subscriptionFn.__context__ = argument[1];
+				self._subscribers.push(subscriptionFn);
+				return self;
+			}
+			return self;
+		})
+		
+		return this;
+	}
+
+	Channel.prototype.unsubscribe = function(subscriptionFn){
+		for(var i = this._subscribers.length-1; i >=0; i--)
+			if (this._subscribers[i] === subscriptionFn)
+				this._subscribers.splice(i,1);
+		return this;
+	}
+
+	Channel.prototype.broadcast = function(){
+		var args = arguments;
+		var self = this;
+		this._subscribers.forEach(function(subscriptionFn){
+			var context = subscriptionFn.__context__ || self;
+			subscriptionFn.apply(context, args);
+		});
+		return this;
+	}
+	return radio;
+})()
